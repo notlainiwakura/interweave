@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat</title>
+    <!-- Link to the external CSS file -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <!-- Link to the external JavaScript file -->
+    <script src="{{ url_for('static', filename='js/script.js') }}" defer></script>
+</head>
+<body>
+    <div class="chat-container">
+        <!-- Chat Header with Username and Logout Button -->
+        <header class="chat-header">
+            <h1>Welcome, {{ username }}!</h1>
+            <a href="{{ url_for('logout') }}" class="logout-btn">Logout</a>
+        </header>
+
+        <!-- Chat Box where messages will appear -->
+        <div class="chat-box" id="chat-box">
+            <!-- Chat messages will be appended here dynamically via JavaScript -->
+        </div>
+
+        <!-- Chat Form for sending messages -->
+        <form id="chat-form" class="chat-form" action="javascript:void(0);">
+            <input type="text" id="chat-input" class="chat-input" placeholder="Type your message..." required>
+            <button type="submit" class="send-btn">Send</button>
+        </form>
+    </div>
+</body>
+</html>

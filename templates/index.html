@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to AllConnected</title>
+    <!-- Link to external CSS file -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+    <div class="index-container">
+        <header class="index-header">
+            <h1>Welcome to AllConnected!</h1>
+            <p>Connect, chat, and discover people with similar interests!</p>
+        </header>
+
+        <div class="index-content">
+            <p>Join our community to explore new connections based on your interests.</p>
+            <div class="button-container">
+                <a href="{{ url_for('login') }}" class="btn primary-btn">Login</a>
+                <a href="{{ url_for('register') }}" class="btn secondary-btn">Register</a>
+            </div>
+        </div>
+
+        <footer class="index-footer">
+            <p>© 2024 AllConnected. All rights reserved.</p>
+        </footer>
+    </div>
+</body>
+</html>
