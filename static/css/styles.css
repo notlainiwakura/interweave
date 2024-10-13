@@ -95,6 +95,7 @@ label {
     display: block;
 }
 
+/* Input fields */
 input[type="text"],
 input[type="email"],
 input[type="password"] {
@@ -113,6 +114,30 @@ input[type="password"]:focus {
     border-color: var(--primary-color);
     outline: none;
     box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+}
+
+/* Sliders Styling */
+input[type="range"] {
+    width: 80%;
+    margin: 10px 0;
+}
+
+.slider-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+}
+
+.slider-container label {
+    flex: 1;
+}
+
+.slider-container span {
+    flex-shrink: 0;
+    margin-left: 10px;
+    font-weight: 500;
+    color: var(--primary-color);
 }
 
 /* Buttons */
