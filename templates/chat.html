@@ -2,12 +2,31 @@
 <html lang="en">
 <head>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <script>
+        function signOut() {
+            // Send a request to the server to log out
+            fetch('/logout', {
+                method: 'POST',
+                credentials: 'same-origin',
+            }).then(() => {
+                // Redirect to the login page after successful logout
+                window.location.href = '/login';
+            });
+        }
+
+        window.addEventListener('beforeunload', function (e) {
+            // Send a synchronous request to the server to log out
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', '/logout', false);
+            xhr.send();
+        });
+    </script>
 </head>
 <body>
     <div class="chat-container">
         <!-- Chat Header -->
         <div class="chat-header">
-            <h1>Welcome, {{ username }}!</h1>
+            <h1>Welcome back, {{ username }}!</h1>
             <!-- Profile button -->
             <a href="{{ url_for('profile') }}">
                 <button class="send-btn">Profile</button>
@@ -27,6 +46,7 @@
         <div class="chat-form">
             <input type="text" id="user-input" class="chat-input" placeholder="Type your message...">
             <button class="send-btn" onclick="sendMessage()">Send</button>
+            <button class="send-btn" onclick="signOut()">Sign Out</button>  <!-- Sign Out button with same styling -->
         </div>
     </div>
 
@@ -75,6 +95,13 @@
             chatWindow.appendChild(messageElement);
             chatWindow.scrollTop = chatWindow.scrollHeight;
         }
+
+
     </script>
+    {% if current_user.is_authenticated %}
+    <div class="nav-buttons">
+        <!-- Removed the Sign Out button as it's now inside the chat form -->
+    </div>
+    {% endif %}
 </body>
 </html>

@@ -1,3 +1,6 @@
+import logging
+from datetime import timedelta
+
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
 
@@ -23,6 +26,9 @@ import json
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your_secret_key'  # Replace with a secure secret key
 app.config['SESSION_TYPE'] = 'filesystem'
+app.config['SESSION_FILE_DIR'] = './.flask_session/'
+app.config['SESSION_PERMANENT'] = False
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=5)  # Adjust as needed
 Session(app)
 
 # Initialize Flask-Login
@@ -103,12 +109,12 @@ def login():
         return render_template('login.html')
 
 # User logout route
-@app.route('/logout')
+@app.route('/logout', methods=['GET', 'POST'])
 @login_required
 def logout():
     logout_user()
-    session.pop('user_profile', None)
-    return redirect(url_for('login'))
+    session.clear()  # Clear the session data
+    return jsonify({"success": True, "redirect": url_for('login')}), 200
 
 @app.route('/profile')
 @login_required
@@ -120,34 +126,48 @@ def profile():
 def update_profile():
     data = request.get_json()
     db_session = SessionLocal()
+    print(f"Database session: {db_session}")  # Check session
+
     user = db_session.query(User).get(current_user.id)
+    print(f"User object: {user}")  # Check user retrieval
 
-    # Update fields based on the new columns added
-    user.sci_fi_movies = data.get('sci_fi_movies')
-    user.cooking = data.get('cooking')
-    user.hiking = data.get('hiking')
-    user.travel = data.get('travel')
-    user.reading = data.get('reading')
-    user.sports = data.get('sports')
-    user.music = data.get('music')
-    user.photography = data.get('photography')
-    user.gardening = data.get('gardening')
-    user.video_games = data.get('video_games')
-    user.board_games = data.get('board_games')
-    user.diy_projects = data.get('diy_projects')
-    user.volunteering = data.get('volunteering')
-    user.movies = data.get('movies')
-    user.podcasts = data.get('podcasts')
-    user.social_media = data.get('social_media')
-    user.pets = data.get('pets')
-    user.workout = data.get('workout')
-    user.meditation = data.get('meditation')
-    user.travel_adventure = data.get('travel_adventure')
-    user.music_instruments = data.get('music_instruments')
-    user.arts_crafts = data.get('arts_crafts')
 
-    # Commit changes and close session
-    db_session.commit()
+    # Map frontend field names to database column names
+    field_mapping = {
+        'sci_fi_movies': 'sci_fi_movies',
+        'cooking': 'cooking',
+        'hiking': 'hiking',
+        'travel': 'travel',
+        'reading': 'reading',
+        'sports': 'sports',
+        'music': 'music',
+        'photography': 'photography',
+        'gardening': 'gardening',
+        'video_games': 'video_games',
+        'board_games': 'board_games',
+        'diy_projects': 'diy_projects',
+        'volunteering': 'volunteering',
+        'movies': 'movies',
+        'podcasts': 'podcasts',
+        'social_media': 'social_media',
+        'pets': 'pets',
+        'workout': 'workout',
+        'meditation': 'meditation',
+        'travel_adventure': 'travel_adventure',
+        'music_instruments': 'music_instruments',
+        'arts_crafts': 'arts_crafts'
+    }
+
+    # Update user's interests based on mapping
+    for frontend_field, db_field in field_mapping.items():
+        setattr(user, db_field, data.get(frontend_field))
+
+    try:
+        db_session.commit()
+    except Exception as e:
+        print(f"Error committing changes: {e}")
+        return jsonify({'status': 'error', 'message': 'Error updating profile'}), 500
+
     db_session.close()
 
     return jsonify({'status': 'success'})

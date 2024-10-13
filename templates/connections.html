@@ -6,8 +6,24 @@
 </head>
 <body>
     <div class="container">
-        <h1>Find Connections</h1>
-        <p>This is the placeholder page for the "Find Connections" feature.</p>
+        <h1>People You May Connect With</h1>
+        {% if similar_users %}
+            <ul class="connections-list">
+                {% for user in similar_users %}
+                    <li class="connection-item">
+                        <p><strong>{{ user.username }}</strong></p>
+                        <p>Similarity Score: {{ '{:.2f}'.format(user.similarity * 100) }}%</p>
+                        <!-- You can add more user info here if needed -->
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>No similar users found.</p>
+        {% endif %}
+        <!-- Back to Chat or Profile -->
+        <a href="{{ url_for('chat') }}">
+            <button class="send-btn">Back to Chat</button>
+        </a>
     </div>
 </body>
 </html>
