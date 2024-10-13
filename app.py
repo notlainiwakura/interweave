@@ -1,3 +1,6 @@
+from sklearn.cluster import KMeans
+from sklearn.preprocessing import StandardScaler
+
 from flask_session import Session
 from flask import Flask, render_template, request, redirect, url_for, jsonify, session
 
@@ -11,7 +14,8 @@ from flask_login import (
 from models import User
 from database import SessionLocal, init_db  # Import the database session and init_db
 from utils import compute_user_embedding, deduce_interest_and_relevance
-from vector_db import add_user_embedding, find_similar_users, user_metadata
+from vector_db import get_user_vectors, find_similar_users_clustering
+
 import numpy as np
 import json
 
@@ -188,7 +192,6 @@ def chat_api():
         {'field': 'workout', 'label': 'working out'},
         {'field': 'meditation', 'label': 'meditation'},
         {'field': 'travel_adventure', 'label': 'adventure travel'},
-        {'field': 'bucket_list', 'label': 'bucket list'},
         {'field': 'music_instruments', 'label': 'playing musical instruments'},
         {'field': 'arts_crafts', 'label': 'arts and crafts'}
     ]
@@ -257,40 +260,106 @@ def chat_api():
     })
 
 @app.route('/connections')
+@login_required
 def connections():
-    return render_template('connections.html')
+    # Step 1: Get user vectors and data
+    user_vectors, user_ids, user_data, interest_fields = get_user_vectors()
+
+    # Check if there are enough users to perform clustering
+    if len(user_vectors) < 2:
+        # Not enough users to cluster
+        similar_users = []
+    else:
+        # Step 2: Preprocess the data
+        scaler = StandardScaler()
+        user_vectors_scaled = scaler.fit_transform(user_vectors)
+
+        # Step 3: Apply K-Means clustering
+        k = 5  # Adjust the number of clusters as needed
+        if len(user_vectors_scaled) < k:
+            k = len(user_vectors_scaled)  # Ensure k is not greater than the number of users
+        kmeans = KMeans(n_clusters=k, random_state=42)
+        kmeans.fit(user_vectors_scaled)
+        cluster_labels = kmeans.labels_
+
+        # Step 4: Assign users to clusters
+        user_clusters = dict(zip(user_ids, cluster_labels))
+
+        # Step 5: Find similar users for the current user
+        target_user_id = current_user.id
+        similar_user_ids = find_similar_users_clustering(target_user_id, user_clusters)
+
+        # Step 6: Get data of similar users
+        similar_users = [
+            {'id': user_id, 'username': user_data[user_id]['username']}
+            for user_id in similar_user_ids
+        ]
+
+    # Step 7: Render the template with similar users
+    return render_template('connections.html', similar_users=similar_users)
 
 
 # Route to find similar users
-@app.route('/find_similar_users', methods=['POST'])
+@app.route('/find_similar_users')
 @login_required
 def find_similar_users_route():
+    # Get the updated interests from the session
     user_profile = session.get('user_profile')
     if not user_profile:
         return jsonify({'similar_users': []})
-    # Compute embedding with current data
-    compute_user_embedding(user_profile)
-    # Add or update the user's embedding in the vector database
-    add_user_embedding(current_user.id, user_profile['embedding'], current_user.username)
-    # Update user's interests and embedding in the database
+
+    # Update the user's interests in the database
     db_session = SessionLocal()
     user = db_session.query(User).get(current_user.id)
-    user.interests = json.dumps(user_profile['interests'])
-    user.embedding = user_profile['embedding'].tobytes()
+
+    # List of interest fields
+    interest_fields = [
+        'sci_fi_movies', 'cooking', 'hiking', 'travel', 'reading', 'sports',
+        'music', 'photography', 'gardening', 'video_games', 'board_games',
+        'diy_projects', 'volunteering', 'movies', 'podcasts', 'social_media',
+        'pets', 'workout', 'meditation', 'travel_adventure',
+        'music_instruments', 'arts_crafts'
+    ]
+
+    # Update user's interests
+    for field in interest_fields:
+        setattr(user, field, user_profile.get(field))
     db_session.commit()
     db_session.close()
-    # Find similar users
-    similar_user_ids = find_similar_users(user_profile['embedding'])
-    # Exclude the current user
-    similar_user_ids = [uid for uid in similar_user_ids if uid != current_user.id]
-    # Retrieve usernames from the database
-    similar_users_info = []
-    db_session = SessionLocal()
-    for uid in similar_user_ids:
-        similar_user = db_session.query(User).get(uid)
-        if similar_user:
-            similar_users_info.append({'username': similar_user.username})
-    db_session.close()
+
+    # Get all user vectors and data
+    user_vectors, user_ids, user_data, _ = get_user_vectors()
+
+    # Check if there are enough users to perform clustering
+    if len(user_vectors) < 2:
+        similar_users_info = []
+    else:
+        # Preprocess the data
+        scaler = StandardScaler()
+        user_vectors_scaled = scaler.fit_transform(user_vectors)
+
+        # Apply K-Means clustering
+        k = 5  # Adjust as needed
+        if len(user_vectors_scaled) < k:
+            k = len(user_vectors_scaled)
+        kmeans = KMeans(n_clusters=k, random_state=42)
+        kmeans.fit(user_vectors_scaled)
+        cluster_labels = kmeans.labels_
+
+        # Assign users to clusters
+        user_clusters = dict(zip(user_ids, cluster_labels))
+
+        # Find similar users
+        target_user_id = current_user.id
+        similar_user_ids = find_similar_users_clustering(target_user_id, user_clusters)
+
+        # Retrieve usernames of similar users
+        similar_users_info = [
+            {'username': user_data[user_id]['username']}
+            for user_id in similar_user_ids
+        ]
+
+    # Return similar users as JSON
     return jsonify({'similar_users': similar_users_info})
 
 # Initialize the database before the app starts

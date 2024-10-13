@@ -159,12 +159,6 @@
         <input type="range" id="travel_adventure" min="0" max="10" value="{{ user.travel_adventure or '0' }}" oninput="document.getElementById('travel_adventure_value').innerText = this.value" onchange="updateInterest('travel_adventure', this.value)">
     </div>
 
-    <!-- Bucket List -->
-    <div>
-        <label for="bucket_list">Bucket List: <span id="bucket_list_value">{{ user.bucket_list or '0' }}</span></label>
-        <input type="range" id="bucket_list" min="0" max="10" value="{{ user.bucket_list or '0' }}" oninput="document.getElementById('bucket_list_value').innerText = this.value" onchange="updateInterest('bucket_list', this.value)">
-    </div>
-
     <!-- Playing Musical Instruments -->
     <div>
         <label for="music_instruments">Playing Musical Instruments: <span id="music_instruments_value">{{ user.music_instruments or '0' }}</span></label>
