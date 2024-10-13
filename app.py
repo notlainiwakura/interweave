@@ -1,5 +1,9 @@
 import logging
 from datetime import timedelta
+import os
+from dotenv import load_dotenv
+import time
+import random
 
 from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
@@ -15,26 +19,73 @@ from flask_login import (
     current_user
 )
 from models import User
-from database import SessionLocal, init_db  # Import the database session and init_db
+from database import SessionLocal, init_db
 from utils import compute_user_embedding, deduce_interest_and_relevance
 from vector_db import get_user_vectors, find_similar_users_clustering
 
 import numpy as np
 import json
 
+# New imports for Hugging Face API and error handling
+from huggingface_hub import InferenceClient
+from huggingface_hub.utils import HfHubHTTPError
+from functools import lru_cache
+
+# Load environment variables
+load_dotenv()
+
 # Initialize Flask app
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'your_secret_key'  # Replace with a secure secret key
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
 app.config['SESSION_TYPE'] = 'filesystem'
 app.config['SESSION_FILE_DIR'] = './.flask_session/'
 app.config['SESSION_PERMANENT'] = False
-app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=5)  # Adjust as needed
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=5)
 Session(app)
 
 # Initialize Flask-Login
 login_manager = LoginManager()
 login_manager.init_app(app)
-login_manager.login_view = 'login'  # Redirect unauthorized users to the login page
+login_manager.login_view = 'login'
+
+# Initialize Hugging Face Inference Client
+hf_token = os.getenv('HUGGINGFACE_TOKEN')
+llama_model = "tiiuae/falcon-7b-instruct"
+client = InferenceClient(llama_model, token=hf_token)
+
+
+# Helper function for retrying API calls
+def retry_api_call(func, max_retries=3, delay=1):
+    for i in range(max_retries):
+        try:
+            return func()
+        except HfHubHTTPError as e:
+            if i == max_retries - 1:
+                raise e
+            time.sleep(delay * (2 ** i))  # Exponential backoff
+
+
+# Caching decorator for API calls
+@lru_cache(maxsize=100)
+def cached_text_generation(prompt):
+    return client.text_generation(prompt, max_new_tokens=200)
+
+
+# Fallback method for generating responses
+def fallback_text_generation(prompt):
+    # This is a simple rule-based fallback. You might want to implement a more sophisticated local model.
+    if "greeting" in prompt.lower():
+        return "Hello! I'm here to help create your user profile. Shall we begin?"
+    elif "ready to proceed" in prompt.lower():
+        return "Great! Let's start with your first interest. How much do you enjoy reading on a scale of 1 to 10?"
+    elif "next question" in prompt.lower():
+        interests = ["sports", "music", "cooking", "travel", "movies"]
+        return f"How much do you enjoy {random.choice(interests)} on a scale of 1 to 10?"
+    elif "profile complete" in prompt.lower():
+        return "Your profile is now complete. Is there anything else you'd like to know?"
+    else:
+        return "I understand. Let's move on to the next question."
+
 
 # User loader callback for Flask-Login
 @login_manager.user_loader
@@ -44,6 +95,7 @@ def load_user(user_id):
     db_session.close()
     return user
 
+
 # Home route redirects to log in or chat
 @app.route('/')
 def index():
@@ -51,6 +103,7 @@ def index():
         return redirect(url_for('chat'))
     else:
         return redirect(url_for('login'))
+
 
 # User registration route
 @app.route('/register', methods=['GET', 'POST'])
@@ -81,6 +134,7 @@ def register():
     else:
         return render_template('register.html')
 
+
 # User login route
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -108,6 +162,7 @@ def login():
     else:
         return render_template('login.html')
 
+
 # User logout route
 @app.route('/logout', methods=['GET', 'POST'])
 @login_required
@@ -116,21 +171,19 @@ def logout():
     session.clear()  # Clear the session data
     return jsonify({"success": True, "redirect": url_for('login')}), 200
 
+
 @app.route('/profile')
 @login_required
 def profile():
     return render_template('profile.html', user=current_user)
+
 
 @app.route('/update_profile', methods=['POST'])
 @login_required
 def update_profile():
     data = request.get_json()
     db_session = SessionLocal()
-    print(f"Database session: {db_session}")  # Check session
-
     user = db_session.query(User).get(current_user.id)
-    print(f"User object: {user}")  # Check user retrieval
-
 
     # Map frontend field names to database column names
     field_mapping = {
@@ -172,117 +225,81 @@ def update_profile():
 
     return jsonify({'status': 'success'})
 
+
 # Chat page route
 @app.route('/chat')
 @login_required
 def chat():
     return render_template('chat.html', username=current_user.username)
 
-# Chat API route for handling chat messages
+
+# Modified chat_api route
 @app.route('/chat_api', methods=['POST'])
 @login_required
 def chat_api():
     data = request.get_json()
     message = data.get('message')
     conversation_state = data.get('conversation_state', 'start')
-    current_question_index = data.get('current_question_index', None)
 
-    # Template for the questions
-    question_template = "From 1 to 10, how much are you interested in {}?"
+    try:
+        if conversation_state == 'start':
+            prompt = "You are an AI assistant helping to create a user profile. Generate a friendly greeting and ask if the user is ready to start answering questions about their interests. Keep it concise."
+            reply = retry_api_call(lambda: cached_text_generation(prompt))
+            conversation_state = 'ready_check'
 
-    # Define the list of questions
-    questions = [
-        {'field': 'sci_fi_movies', 'label': 'sci-fi movies'},
-        {'field': 'cooking', 'label': 'cooking'},
-        {'field': 'hiking', 'label': 'hiking'},
-        {'field': 'travel', 'label': 'travel'},
-        {'field': 'reading', 'label': 'reading'},
-        {'field': 'sports', 'label': 'sports'},
-        {'field': 'music', 'label': 'music'},
-        {'field': 'photography', 'label': 'photography'},
-        {'field': 'gardening', 'label': 'gardening'},
-        {'field': 'video_games', 'label': 'video games'},
-        {'field': 'board_games', 'label': 'board games'},
-        {'field': 'diy_projects', 'label': 'DIY projects'},
-        {'field': 'volunteering', 'label': 'volunteering'},
-        {'field': 'movies', 'label': 'movies'},
-        {'field': 'podcasts', 'label': 'podcasts'},
-        {'field': 'social_media', 'label': 'social media'},
-        {'field': 'pets', 'label': 'pets'},
-        {'field': 'workout', 'label': 'working out'},
-        {'field': 'meditation', 'label': 'meditation'},
-        {'field': 'travel_adventure', 'label': 'adventure travel'},
-        {'field': 'music_instruments', 'label': 'playing musical instruments'},
-        {'field': 'arts_crafts', 'label': 'arts and crafts'}
-    ]
+        elif conversation_state == 'ready_check':
+            prompt = f"The user responded '{message}' to the question about starting the profile creation. Determine if they're ready to proceed. If yes, generate the first question about their interests. If no, provide a polite response. If unclear, ask for clarification."
+            response = retry_api_call(lambda: cached_text_generation(prompt))
 
-    if conversation_state == 'start':
-        reply = ("Let's create your profile now. I will ask you a series of questions, "
-                 "please rank your level of interest from 1 to 10. If you like you can click on the Profile button and manually adjust the values at any time. Would you like to start? y/n")
-        conversation_state = 'ready_check'
-
-    elif conversation_state == 'ready_check':
-        if message.lower() == 'y':
-            # Start with the first question
-            current_question_index = 0
-            reply = question_template.format(questions[current_question_index]['label'])
-            conversation_state = 'asking_questions'
-        elif message.lower() == 'n':
-            reply = "No problem, please come back whenever you are ready, I'll be right here!"
-            conversation_state = 'end'
-        else:
-            reply = "I'm sorry, I didn't understand that. Please answer with 'y' for yes or 'n' for no."
-
-    elif conversation_state == 'asking_questions':
-        try:
-            value = float(message)
-            if 1 <= value <= 10:
-                # Ensure current_question_index is valid
-                if current_question_index is None or current_question_index >= len(questions):
-                    reply = 'An error occurred. Please start over.'
-                    conversation_state = 'start'
-                    current_question_index = None
-                else:
-                    current_question = questions[current_question_index]['field']
-
-                    # Update the user's interest in the database
-                    db_session = SessionLocal()
-                    user = db_session.query(User).get(current_user.id)
-                    setattr(user, current_question, value)
-                    db_session.commit()
-                    db_session.close()
-
-                    # Prepare the reply
-                    field_label = questions[current_question_index]['label']
-                    reply = f'Great! Your interest in {field_label} has been updated to {value}. '
-
-                    # Move to the next question
-                    current_question_index += 1
-                    if current_question_index < len(questions):
-                        next_label = questions[current_question_index]['label']
-                        reply += question_template.format(next_label)
-                    else:
-                        # No more questions
-                        reply += ('Your profile is now complete. Is there anything else you would like to know?')
-                        conversation_state = 'end'
-                        current_question_index = None
+            if "ready" in response.lower() or "proceed" in response.lower():
+                reply = response
+                conversation_state = 'asking_questions'
+            elif "not ready" in response.lower() or "come back" in response.lower():
+                reply = response
+                conversation_state = 'end'
             else:
-                reply = 'Please provide a number between 1 and 10.'
-        except ValueError:
-            reply = 'Please provide a valid number between 1 and 10.'
-    else:
-        reply = ("Your profile is complete. If you'd like to update your interests, just let me know!")
+                reply = response
+
+        elif conversation_state == 'asking_questions':
+            prompt = f"The user responded '{message}' to the previous question about their interests. Analyze this response, update the user profile accordingly, and generate the next question about a different interest. If all major interests have been covered, conclude the profile creation."
+            response = retry_api_call(lambda: cached_text_generation(prompt))
+
+            # Parse the response to update user profile (simplified example)
+            db_session = SessionLocal()
+            user = db_session.query(User).get(current_user.id)
+
+            if "interest:" in response.lower():
+                interest, value = response.lower().split("interest:")[1].split("value:")
+                interest = interest.strip()
+                value = float(value.strip())
+                setattr(user, interest, value)
+                db_session.commit()
+
+            db_session.close()
+
+            if "profile complete" in response.lower() or "all interests covered" in response.lower():
+                conversation_state = 'end'
+
+            reply = response
+
+        else:
+            prompt = "Generate a friendly message informing the user that their profile is complete and asking if they need anything else."
+            reply = retry_api_call(lambda: cached_text_generation(prompt))
+
+    except HfHubHTTPError as e:
+        logging.error(f"Hugging Face API error: {str(e)}")
+        reply = fallback_text_generation(prompt)
 
     return jsonify({
         'reply': reply,
-        'conversation_state': conversation_state,
-        'current_question_index': current_question_index
+        'conversation_state': conversation_state
     })
+
 
 @app.route('/connections')
 @login_required
 def connections():
-    # Step 1: Get user vectors and data
+    # Get user vectors and data
     user_vectors, user_ids, user_data, interest_fields = get_user_vectors()
 
     # Check if there are enough users to perform clustering
@@ -290,11 +307,11 @@ def connections():
         # Not enough users to cluster
         similar_users = []
     else:
-        # Step 2: Preprocess the data
+        # Preprocess the data
         scaler = StandardScaler()
         user_vectors_scaled = scaler.fit_transform(user_vectors)
 
-        # Step 3: Apply K-Means clustering
+        # Apply K-Means clustering
         k = 5  # Adjust the number of clusters as needed
         if len(user_vectors_scaled) < k:
             k = len(user_vectors_scaled)  # Ensure k is not greater than the number of users
@@ -302,20 +319,20 @@ def connections():
         kmeans.fit(user_vectors_scaled)
         cluster_labels = kmeans.labels_
 
-        # Step 4: Assign users to clusters
+        # Assign users to clusters
         user_clusters = dict(zip(user_ids, cluster_labels))
 
-        # Step 5: Find similar users for the current user
+        # Find similar users for the current user
         target_user_id = current_user.id
         similar_user_ids = find_similar_users_clustering(target_user_id, user_clusters)
 
-        # Step 6: Get data of similar users
+        # Get data of similar users
         similar_users = [
             {'id': user_id, 'username': user_data[user_id]['username']}
             for user_id in similar_user_ids
         ]
 
-    # Step 7: Render the template with similar users
+    # Render the template with similar users
     return render_template('connections.html', similar_users=similar_users)
 
 
@@ -381,6 +398,7 @@ def find_similar_users_route():
 
     # Return similar users as JSON
     return jsonify({'similar_users': similar_users_info})
+
 
 # Initialize the database before the app starts
 if __name__ == '__main__':
