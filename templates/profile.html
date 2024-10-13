@@ -4,44 +4,179 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>User Profile</title>
+    <script>
+        // Function to handle slider change and send update to backend
+        function updateInterest(field, value) {
+            // Create a JSON object with the updated value
+            let data = {
+                field: field,
+                value: value
+            };
+
+            // Send an AJAX request to update the value in the backend
+            fetch('/update_interest', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    console.log(`Successfully updated ${field} to ${value}`);
+                } else {
+                    console.log('Error updating interest:', data);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+    </script>
 </head>
 <body>
     <h1>User Profile</h1>
     <p>Username: {{ user.username }}</p>
 
-    <!-- Interests and Hobbies -->
-    <p>Sci-fi Movies: <span id="sci_fi_movies">{{ user.sci_fi_movies or 'Not rated' }}</span></p>
-    <p>Cooking: <span id="cooking">{{ user.cooking or 'Not rated' }}</span></p>
-    <p>Hiking: <span id="hiking">{{ user.hiking or 'Not rated' }}</span></p>
-    <p>Travel: <span id="travel">{{ user.travel or 'Not rated' }}</span></p>
-    <p>Reading: <span id="reading">{{ user.reading or 'Not rated' }}</span></p>
-    <p>Sports: <span id="sports">{{ user.sports or 'Not rated' }}</span></p>
-    <p>Music: <span id="music">{{ user.music or 'Not rated' }}</span></p>
-    <p>Photography: <span id="photography">{{ user.photography or 'Not rated' }}</span></p>
-    <p>Gardening: <span id="gardening">{{ user.gardening or 'Not rated' }}</span></p>
-    <p>Video Games: <span id="video_games">{{ user.video_games or 'Not rated' }}</span></p>
-    <p>Board Games: <span id="board_games">{{ user.board_games or 'Not rated' }}</span></p>
-    <p>DIY Projects: <span id="diy_projects">{{ user.diy_projects or 'Not rated' }}</span></p>
-    <p>Volunteering: <span id="volunteering">{{ user.volunteering or 'Not rated' }}</span></p>
+    <!-- Sci-fi Movies -->
+    <div>
+        <label for="sci_fi_movies">Sci-fi Movies: <span id="sci_fi_movies_value">{{ user.sci_fi_movies or '0' }}</span></label>
+        <input type="range" id="sci_fi_movies" min="0" max="10" value="{{ user.sci_fi_movies or '0' }}" oninput="document.getElementById('sci_fi_movies_value').innerText = this.value" onchange="updateInterest('sci_fi_movies', this.value)">
+    </div>
 
-    <!-- Entertainment and Media -->
-    <p>Movies: <span id="movies">{{ user.movies or 'Not rated' }}</span></p>
-    <p>Podcasts: <span id="podcasts">{{ user.podcasts or 'Not rated' }}</span></p>
-    <p>Social Media: <span id="social_media">{{ user.social_media or 'Not rated' }}</span></p>
+    <!-- Cooking -->
+    <div>
+        <label for="cooking">Cooking: <span id="cooking_value">{{ user.cooking or '0' }}</span></label>
+        <input type="range" id="cooking" min="0" max="10" value="{{ user.cooking or '0' }}" oninput="document.getElementById('cooking_value').innerText = this.value" onchange="updateInterest('cooking', this.value)">
+    </div>
 
-    <!-- Lifestyle and Habits -->
-    <p>Pets: <span id="pets">{{ user.pets or 'Not rated' }}</span></p>
-    <p>Workout: <span id="workout">{{ user.workout or 'Not rated' }}</span></p>
-    <p>Meditation: <span id="meditation">{{ user.meditation or 'Not rated' }}</span></p>
+    <!-- Hiking -->
+    <div>
+        <label for="hiking">Hiking: <span id="hiking_value">{{ user.hiking or '0' }}</span></label>
+        <input type="range" id="hiking" min="0" max="10" value="{{ user.hiking or '0' }}" oninput="document.getElementById('hiking_value').innerText = this.value" onchange="updateInterest('hiking', this.value)">
+    </div>
 
-    <!-- Adventure and Experiences -->
-    <p>Adventure Travel: <span id="travel_adventure">{{ user.travel_adventure or 'Not rated' }}</span></p>
+    <!-- Travel -->
+    <div>
+        <label for="travel">Travel: <span id="travel_value">{{ user.travel or '0' }}</span></label>
+        <input type="range" id="travel" min="0" max="10" value="{{ user.travel or '0' }}" oninput="document.getElementById('travel_value').innerText = this.value" onchange="updateInterest('travel', this.value)">
+    </div>
 
-    <!-- Creative Interests -->
-    <p>Playing Musical Instruments: <span id="music_instruments">{{ user.music_instruments or 'Not rated' }}</span></p>
-    <p>Arts & Crafts: <span id="arts_crafts">{{ user.arts_crafts or 'Not rated' }}</span></p>
+    <!-- Reading -->
+    <div>
+        <label for="reading">Reading: <span id="reading_value">{{ user.reading or '0' }}</span></label>
+        <input type="range" id="reading" min="0" max="10" value="{{ user.reading or '0' }}" oninput="document.getElementById('reading_value').innerText = this.value" onchange="updateInterest('reading', this.value)">
+    </div>
 
-    <!-- Back to Chat -->
+    <!-- Sports -->
+    <div>
+        <label for="sports">Sports: <span id="sports_value">{{ user.sports or '0' }}</span></label>
+        <input type="range" id="sports" min="0" max="10" value="{{ user.sports or '0' }}" oninput="document.getElementById('sports_value').innerText = this.value" onchange="updateInterest('sports', this.value)">
+    </div>
+
+    <!-- Music -->
+    <div>
+        <label for="music">Music: <span id="music_value">{{ user.music or '0' }}</span></label>
+        <input type="range" id="music" min="0" max="10" value="{{ user.music or '0' }}" oninput="document.getElementById('music_value').innerText = this.value" onchange="updateInterest('music', this.value)">
+    </div>
+
+    <!-- Photography -->
+    <div>
+        <label for="photography">Photography: <span id="photography_value">{{ user.photography or '0' }}</span></label>
+        <input type="range" id="photography" min="0" max="10" value="{{ user.photography or '0' }}" oninput="document.getElementById('photography_value').innerText = this.value" onchange="updateInterest('photography', this.value)">
+    </div>
+
+    <!-- Gardening -->
+    <div>
+        <label for="gardening">Gardening: <span id="gardening_value">{{ user.gardening or '0' }}</span></label>
+        <input type="range" id="gardening" min="0" max="10" value="{{ user.gardening or '0' }}" oninput="document.getElementById('gardening_value').innerText = this.value" onchange="updateInterest('gardening', this.value)">
+    </div>
+
+    <!-- Video Games -->
+    <div>
+        <label for="video_games">Video Games: <span id="video_games_value">{{ user.video_games or '0' }}</span></label>
+        <input type="range" id="video_games" min="0" max="10" value="{{ user.video_games or '0' }}" oninput="document.getElementById('video_games_value').innerText = this.value" onchange="updateInterest('video_games', this.value)">
+    </div>
+
+    <!-- Board Games -->
+    <div>
+        <label for="board_games">Board Games: <span id="board_games_value">{{ user.board_games or '0' }}</span></label>
+        <input type="range" id="board_games" min="0" max="10" value="{{ user.board_games or '0' }}" oninput="document.getElementById('board_games_value').innerText = this.value" onchange="updateInterest('board_games', this.value)">
+    </div>
+
+    <!-- DIY Projects -->
+    <div>
+        <label for="diy_projects">DIY Projects: <span id="diy_projects_value">{{ user.diy_projects or '0' }}</span></label>
+        <input type="range" id="diy_projects" min="0" max="10" value="{{ user.diy_projects or '0' }}" oninput="document.getElementById('diy_projects_value').innerText = this.value" onchange="updateInterest('diy_projects', this.value)">
+    </div>
+
+    <!-- Volunteering -->
+    <div>
+        <label for="volunteering">Volunteering: <span id="volunteering_value">{{ user.volunteering or '0' }}</span></label>
+        <input type="range" id="volunteering" min="0" max="10" value="{{ user.volunteering or '0' }}" oninput="document.getElementById('volunteering_value').innerText = this.value" onchange="updateInterest('volunteering', this.value)">
+    </div>
+
+    <!-- Movies -->
+    <div>
+        <label for="movies">Movies: <span id="movies_value">{{ user.movies or '0' }}</span></label>
+        <input type="range" id="movies" min="0" max="10" value="{{ user.movies or '0' }}" oninput="document.getElementById('movies_value').innerText = this.value" onchange="updateInterest('movies', this.value)">
+    </div>
+
+    <!-- Podcasts -->
+    <div>
+        <label for="podcasts">Podcasts: <span id="podcasts_value">{{ user.podcasts or '0' }}</span></label>
+        <input type="range" id="podcasts" min="0" max="10" value="{{ user.podcasts or '0' }}" oninput="document.getElementById('podcasts_value').innerText = this.value" onchange="updateInterest('podcasts', this.value)">
+    </div>
+
+    <!-- Social Media -->
+    <div>
+        <label for="social_media">Social Media: <span id="social_media_value">{{ user.social_media or '0' }}</span></label>
+        <input type="range" id="social_media" min="0" max="10" value="{{ user.social_media or '0' }}" oninput="document.getElementById('social_media_value').innerText = this.value" onchange="updateInterest('social_media', this.value)">
+    </div>
+
+    <!-- Pets -->
+    <div>
+        <label for="pets">Pets: <span id="pets_value">{{ user.pets or '0' }}</span></label>
+        <input type="range" id="pets" min="0" max="10" value="{{ user.pets or '0' }}" oninput="document.getElementById('pets_value').innerText = this.value" onchange="updateInterest('pets', this.value)">
+    </div>
+
+    <!-- Workout -->
+    <div>
+        <label for="workout">Workout: <span id="workout_value">{{ user.workout or '0' }}</span></label>
+        <input type="range" id="workout" min="0" max="10" value="{{ user.workout or '0' }}" oninput="document.getElementById('workout_value').innerText = this.value" onchange="updateInterest('workout', this.value)">
+    </div>
+
+    <!-- Meditation -->
+    <div>
+        <label for="meditation">Meditation: <span id="meditation_value">{{ user.meditation or '0' }}</span></label>
+        <input type="range" id="meditation" min="0" max="10" value="{{ user.meditation or '0' }}" oninput="document.getElementById('meditation_value').innerText = this.value" onchange="updateInterest('meditation', this.value)">
+    </div>
+
+    <!-- Adventure Travel -->
+    <div>
+        <label for="travel_adventure">Adventure Travel: <span id="travel_adventure_value">{{ user.travel_adventure or '0' }}</span></label>
+        <input type="range" id="travel_adventure" min="0" max="10" value="{{ user.travel_adventure or '0' }}" oninput="document.getElementById('travel_adventure_value').innerText = this.value" onchange="updateInterest('travel_adventure', this.value)">
+    </div>
+
+    <!-- Bucket List -->
+    <div>
+        <label for="bucket_list">Bucket List: <span id="bucket_list_value">{{ user.bucket_list or '0' }}</span></label>
+        <input type="range" id="bucket_list" min="0" max="10" value="{{ user.bucket_list or '0' }}" oninput="document.getElementById('bucket_list_value').innerText = this.value" onchange="updateInterest('bucket_list', this.value)">
+    </div>
+
+    <!-- Playing Musical Instruments -->
+    <div>
+        <label for="music_instruments">Playing Musical Instruments: <span id="music_instruments_value">{{ user.music_instruments or '0' }}</span></label>
+        <input type="range" id="music_instruments" min="0" max="10" value="{{ user.music_instruments or '0' }}" oninput="document.getElementById('music_instruments_value').innerText = this.value" onchange="updateInterest('music_instruments', this.value)">
+    </div>
+
+    <!-- Arts & Crafts -->
+    <div>
+        <label for="arts_crafts">Arts & Crafts: <span id="arts_crafts_value">{{ user.arts_crafts or '0' }}</span></label>
+        <input type="range" id="arts_crafts" min="0" max="10" value="{{ user.arts_crafts or '0' }}" oninput="document.getElementById('arts_crafts_value').innerText = this.value" onchange="updateInterest('arts_crafts', this.value)">
+    </div>
+
     <a href="{{ url_for('chat') }}">Back to Chat</a>
 </body>
 </html>
