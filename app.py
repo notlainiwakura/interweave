@@ -195,7 +195,7 @@ def chat_api():
 
     if conversation_state == 'start':
         reply = ("Let's create your profile now. I will ask you a series of questions, "
-                 "please rank your level of interest from 1 to 10. Are you ready? y/n")
+                 "please rank your level of interest from 1 to 10. If you like you can click on the Profile button and manually adjust the values at any time. Would you like to start? y/n")
         conversation_state = 'ready_check'
 
     elif conversation_state == 'ready_check':
@@ -256,7 +256,9 @@ def chat_api():
         'current_question_index': current_question_index
     })
 
-
+@app.route('/connections')
+def connections():
+    return render_template('connections.html')
 
 
 # Route to find similar users

@@ -1,16 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- ... -->
-    <!-- Link to the external CSS file -->
-<link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
 </head>
 <body>
     <div class="chat-container">
         <!-- Chat Header -->
         <div class="chat-header">
             <h1>Welcome, {{ username }}!</h1>
-            <a href="{{ url_for('profile') }}" class="btn-link">Profile</a>
+            <!-- Profile button -->
+            <a href="{{ url_for('profile') }}">
+                <button class="send-btn">Profile</button>
+            </a>
+            <!-- Find Connections button -->
+            <a href="{{ url_for('connections') }}">
+                <button class="send-btn">Find Connections</button>
+            </a>
         </div>
 
         <!-- Chat Box where messages appear -->
