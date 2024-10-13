@@ -241,50 +241,75 @@ def chat_api():
     message = data.get('message')
     conversation_state = data.get('conversation_state', 'start')
 
+    interest_fields = [
+        'sci_fi_movies', 'cooking', 'hiking', 'travel', 'reading', 'sports',
+        'music', 'photography', 'gardening', 'video_games', 'board_games',
+        'diy_projects', 'volunteering', 'movies', 'podcasts', 'social_media',
+        'pets', 'workout', 'meditation', 'travel_adventure',
+        'music_instruments', 'arts_crafts'
+    ]
+
+    def post_process(response):
+        # Remove any leading/trailing whitespace
+        response = response.strip()
+        # Capitalize the first letter
+        return response[0].upper() + response[1:] if response else ""
+
     try:
         if conversation_state == 'start':
-            prompt = "You are an AI assistant helping to create a user profile. Generate a friendly greeting and ask if the user is ready to start answering questions about their interests. Keep it concise."
-            reply = retry_api_call(lambda: cached_text_generation(prompt))
+            prompt = """You are an AI assistant helping to create a user profile. Generate a friendly greeting and casually ask if the user is ready to begin talking about their interests. Keep the conversation light, engaging, and casual, as if you're having a relaxed conversation with a friend. Avoid sounding too formal."""
+            reply = post_process(retry_api_call(lambda: cached_text_generation(prompt)))
             conversation_state = 'ready_check'
 
         elif conversation_state == 'ready_check':
-            prompt = f"The user responded '{message}' to the question about starting the profile creation. Determine if they're ready to proceed. If yes, generate the first question about their interests. If no, provide a polite response. If unclear, ask for clarification."
-            response = retry_api_call(lambda: cached_text_generation(prompt))
+            prompt = f"""The user responded '{message}' to your greeting. Now, if they seem ready to proceed, casually ask them about one of their interests from this list: {', '.join(interest_fields)}. Feel free to mix in casual talk like 'By the way,' or 'Just curious,' to make the conversation flow naturally. If the user isn't ready, respond politely and offer to come back later. If you're unsure, ask for clarification, but keep it light and friendly."""
+            response = post_process(retry_api_call(lambda: cached_text_generation(prompt)))
 
-            if "ready" in response.lower() or "proceed" in response.lower():
-                reply = response
+            if any(word in response.lower() for word in ["let's begin", "first interest", "tell me about"]):
                 conversation_state = 'asking_questions'
-            elif "not ready" in response.lower() or "come back" in response.lower():
-                reply = response
-                conversation_state = 'end'
-            else:
-                reply = response
-
-        elif conversation_state == 'asking_questions':
-            prompt = f"The user responded '{message}' to the previous question about their interests. Analyze this response, update the user profile accordingly, and generate the next question about a different interest. If all major interests have been covered, conclude the profile creation."
-            response = retry_api_call(lambda: cached_text_generation(prompt))
-
-            # Parse the response to update user profile (simplified example)
-            db_session = SessionLocal()
-            user = db_session.query(User).get(current_user.id)
-
-            if "interest:" in response.lower():
-                interest, value = response.lower().split("interest:")[1].split("value:")
-                interest = interest.strip()
-                value = float(value.strip())
-                setattr(user, interest, value)
-                db_session.commit()
-
-            db_session.close()
-
-            if "profile complete" in response.lower() or "all interests covered" in response.lower():
+            elif any(word in response.lower() for word in ["not ready", "come back later", "another time"]):
                 conversation_state = 'end'
 
             reply = response
 
+        elif conversation_state == 'asking_questions':
+            prompt = f"""Based on the user's response '{message}', casually ask them another question about one of their interests from {interest_fields}. For example, if they've already mentioned one, ask how much they enjoy that on a scale of 1-10, or ask them about a new interest that hasn't been discussed. Keep the tone friendly and conversational, as if you're chatting casually. Avoid repeating their message back word-for-word, and be sure to add a touch of casual talk.
+
+    After generating your response, on a new line, add:
+    INTERNAL_NOTE: Interest: [interest_name], Value: [1-10]"""
+
+            response = retry_api_call(lambda: cached_text_generation(prompt))
+
+            # Split the response into the user-facing part and the internal note
+            user_response, internal_note = response.split('INTERNAL_NOTE:', 1)
+            user_response = post_process(user_response)
+
+            # Parse the internal note to update user profile
+            interest = None
+            value = None
+            if 'Interest:' in internal_note and 'Value:' in internal_note:
+                interest_part, value_part = internal_note.split(',')
+                interest = interest_part.split('Interest:')[1].strip().lower()
+                try:
+                    value = float(value_part.split('Value:')[1].strip())
+                except ValueError:
+                    value = None
+
+            if interest and value is not None and interest in interest_fields:
+                db_session = SessionLocal()
+                user = db_session.query(User).get(current_user.id)
+                setattr(user, interest, value)
+                db_session.commit()
+                db_session.close()
+
+            if "profile complete" in user_response.lower() or "all interests covered" in user_response.lower():
+                conversation_state = 'end'
+
+            reply = user_response
+
         else:
-            prompt = "Generate a friendly message informing the user that their profile is complete and asking if they need anything else."
-            reply = retry_api_call(lambda: cached_text_generation(prompt))
+            prompt = """Wrap up the conversation by informing the user that their profile is complete, but do so in a friendly and conversational tone. Feel free to ask if there's anything else they need help with, and ensure that the conversation stays light and relaxed."""
+            reply = post_process(retry_api_call(lambda: cached_text_generation(prompt)))
 
     except HfHubHTTPError as e:
         logging.error(f"Hugging Face API error: {str(e)}")
