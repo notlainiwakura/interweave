@@ -1,48 +1,75 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat</title>
+    <!-- ... -->
+    <!-- Link to the external CSS file -->
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <h1>Welcome, {{ username }}!</h1>
-    <a href="{{ url_for('profile') }}">Profile</a>
-    <div id="chat-window"></div>
-    <input type="text" id="user-input" placeholder="Type your message...">
-    <button onclick="sendMessage()">Send</button>
+    <div class="chat-container">
+        <!-- Chat Header -->
+        <div class="chat-header">
+            <h1>Welcome, {{ username }}!</h1>
+            <a href="{{ url_for('profile') }}" class="btn-link">Profile</a>
+        </div>
+
+        <!-- Chat Box where messages appear -->
+        <div class="chat-box" id="chat-window">
+            <!-- Chat messages will be appended here -->
+        </div>
+
+        <!-- Chat Form for user input -->
+        <div class="chat-form">
+            <input type="text" id="user-input" class="chat-input" placeholder="Type your message...">
+            <button class="send-btn" onclick="sendMessage()">Send</button>
+        </div>
+    </div>
 
     <script>
-    let currentQuestion = '';
+        let conversationState = 'start';
+        let currentQuestionIndex = null;
 
-    function sendMessage() {
-        const userInput = document.getElementById('user-input');
-        const message = userInput.value;
-        userInput.value = '';
+        function sendMessage() {
+            const userInput = document.getElementById('user-input');
+            const message = userInput.value.trim();
+            userInput.value = '';
 
-        displayMessage('You: ' + message);
+            if (message !== '') {
+                displayMessage('You', message);
 
-        fetch('/chat_api', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                message: message,
-                current_question: currentQuestion
-            }),
-        })
-        .then(response => response.json())
-        .then(data => {
-            displayMessage('Bot: ' + data.reply);
-            currentQuestion = data.current_question;
-        });
-    }
+                fetch('/chat_api', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        message: message,
+                        conversation_state: conversationState,
+                        current_question_index: currentQuestionIndex
+                    }),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    displayMessage('Bot', data.reply);
+                    conversationState = data.conversation_state;
+                    currentQuestionIndex = data.current_question_index;
+                });
+            }
+        }
 
-    function displayMessage(message) {
-        const chatWindow = document.getElementById('chat-window');
-        chatWindow.innerHTML += '<p>' + message + '</p>';
-    }
+        function displayMessage(sender, message) {
+            const chatWindow = document.getElementById('chat-window');
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('chat-message', sender.toLowerCase());
+
+            const messageContent = document.createElement('div');
+            messageContent.classList.add('message-content');
+            messageContent.textContent = message;
+
+            messageElement.appendChild(messageContent);
+            chatWindow.appendChild(messageElement);
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+        }
     </script>
 </body>
 </html>

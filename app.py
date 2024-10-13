@@ -117,11 +117,35 @@ def update_profile():
     data = request.get_json()
     db_session = SessionLocal()
     user = db_session.query(User).get(current_user.id)
+
+    # Update fields based on the new columns added
     user.sci_fi_movies = data.get('sci_fi_movies')
     user.cooking = data.get('cooking')
     user.hiking = data.get('hiking')
+    user.travel = data.get('travel')
+    user.reading = data.get('reading')
+    user.sports = data.get('sports')
+    user.music = data.get('music')
+    user.photography = data.get('photography')
+    user.gardening = data.get('gardening')
+    user.video_games = data.get('video_games')
+    user.board_games = data.get('board_games')
+    user.diy_projects = data.get('diy_projects')
+    user.volunteering = data.get('volunteering')
+    user.movies = data.get('movies')
+    user.podcasts = data.get('podcasts')
+    user.social_media = data.get('social_media')
+    user.pets = data.get('pets')
+    user.workout = data.get('workout')
+    user.meditation = data.get('meditation')
+    user.travel_adventure = data.get('travel_adventure')
+    user.music_instruments = data.get('music_instruments')
+    user.arts_crafts = data.get('arts_crafts')
+
+    # Commit changes and close session
     db_session.commit()
     db_session.close()
+
     return jsonify({'status': 'success'})
 
 # Chat page route
@@ -136,37 +160,102 @@ def chat():
 def chat_api():
     data = request.get_json()
     message = data.get('message')
-    current_question = data.get('current_question', '')
+    conversation_state = data.get('conversation_state', 'start')
+    current_question_index = data.get('current_question_index', None)
 
-    if not current_question:
-        if message.lower() in ['sci-fi movies', 'scifi movies', 'sci fi movies']:
-            current_question = 'sci_fi_movies'
-        elif message.lower() == 'cooking':
-            current_question = 'cooking'
-        elif message.lower() == 'hiking':
-            current_question = 'hiking'
+    # Template for the questions
+    question_template = "From 1 to 10, how much are you interested in {}?"
 
-        if current_question:
-            reply = f'From 1 to 10 how much do you {"are interested in" if current_question == "sci_fi_movies" else "like"} {current_question.replace("_", " ")}?'
+    # Define the list of questions
+    questions = [
+        {'field': 'sci_fi_movies', 'label': 'sci-fi movies'},
+        {'field': 'cooking', 'label': 'cooking'},
+        {'field': 'hiking', 'label': 'hiking'},
+        {'field': 'travel', 'label': 'travel'},
+        {'field': 'reading', 'label': 'reading'},
+        {'field': 'sports', 'label': 'sports'},
+        {'field': 'music', 'label': 'music'},
+        {'field': 'photography', 'label': 'photography'},
+        {'field': 'gardening', 'label': 'gardening'},
+        {'field': 'video_games', 'label': 'video games'},
+        {'field': 'board_games', 'label': 'board games'},
+        {'field': 'diy_projects', 'label': 'DIY projects'},
+        {'field': 'volunteering', 'label': 'volunteering'},
+        {'field': 'movies', 'label': 'movies'},
+        {'field': 'podcasts', 'label': 'podcasts'},
+        {'field': 'social_media', 'label': 'social media'},
+        {'field': 'pets', 'label': 'pets'},
+        {'field': 'workout', 'label': 'working out'},
+        {'field': 'meditation', 'label': 'meditation'},
+        {'field': 'travel_adventure', 'label': 'adventure travel'},
+        {'field': 'bucket_list', 'label': 'bucket list'},
+        {'field': 'music_instruments', 'label': 'playing musical instruments'},
+        {'field': 'arts_crafts', 'label': 'arts and crafts'}
+    ]
+
+    if conversation_state == 'start':
+        reply = ("Let's create your profile now. I will ask you a series of questions, "
+                 "please rank your level of interest from 1 to 10. Are you ready? y/n")
+        conversation_state = 'ready_check'
+
+    elif conversation_state == 'ready_check':
+        if message.lower() == 'y':
+            # Start with the first question
+            current_question_index = 0
+            reply = question_template.format(questions[current_question_index]['label'])
+            conversation_state = 'asking_questions'
+        elif message.lower() == 'n':
+            reply = "No problem, please come back whenever you are ready, I'll be right here!"
+            conversation_state = 'end'
         else:
-            reply = "I can ask you about your interests in sci-fi movies, cooking, and hiking. Which one would you like to rate?"
-    else:
+            reply = "I'm sorry, I didn't understand that. Please answer with 'y' for yes or 'n' for no."
+
+    elif conversation_state == 'asking_questions':
         try:
             value = float(message)
             if 1 <= value <= 10:
-                db_session = SessionLocal()
-                user = db_session.query(User).get(current_user.id)
-                setattr(user, current_question, value)
-                db_session.commit()
-                db_session.close()
-                reply = f'Great! Your {current_question.replace("_", " ")} interest has been updated to {value}. Would you like to rate another interest?'
-                current_question = ''  # Reset question for the next input
+                # Ensure current_question_index is valid
+                if current_question_index is None or current_question_index >= len(questions):
+                    reply = 'An error occurred. Please start over.'
+                    conversation_state = 'start'
+                    current_question_index = None
+                else:
+                    current_question = questions[current_question_index]['field']
+
+                    # Update the user's interest in the database
+                    db_session = SessionLocal()
+                    user = db_session.query(User).get(current_user.id)
+                    setattr(user, current_question, value)
+                    db_session.commit()
+                    db_session.close()
+
+                    # Prepare the reply
+                    field_label = questions[current_question_index]['label']
+                    reply = f'Great! Your interest in {field_label} has been updated to {value}. '
+
+                    # Move to the next question
+                    current_question_index += 1
+                    if current_question_index < len(questions):
+                        next_label = questions[current_question_index]['label']
+                        reply += question_template.format(next_label)
+                    else:
+                        # No more questions
+                        reply += ('Your profile is now complete. Is there anything else you would like to know?')
+                        conversation_state = 'end'
+                        current_question_index = None
             else:
                 reply = 'Please provide a number between 1 and 10.'
         except ValueError:
             reply = 'Please provide a valid number between 1 and 10.'
+    else:
+        reply = ("Your profile is complete. If you'd like to update your interests, just let me know!")
 
-    return jsonify({'reply': reply, 'current_question': current_question})
+    return jsonify({
+        'reply': reply,
+        'conversation_state': conversation_state,
+        'current_question_index': current_question_index
+    })
+
 
 
 

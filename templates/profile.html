@@ -8,9 +8,40 @@
 <body>
     <h1>User Profile</h1>
     <p>Username: {{ user.username }}</p>
-    <p>Sci-fi movies: <span id="sci_fi_movies">{{ user.sci_fi_movies or 'Not rated' }}</span></p>
+
+    <!-- Interests and Hobbies -->
+    <p>Sci-fi Movies: <span id="sci_fi_movies">{{ user.sci_fi_movies or 'Not rated' }}</span></p>
     <p>Cooking: <span id="cooking">{{ user.cooking or 'Not rated' }}</span></p>
     <p>Hiking: <span id="hiking">{{ user.hiking or 'Not rated' }}</span></p>
+    <p>Travel: <span id="travel">{{ user.travel or 'Not rated' }}</span></p>
+    <p>Reading: <span id="reading">{{ user.reading or 'Not rated' }}</span></p>
+    <p>Sports: <span id="sports">{{ user.sports or 'Not rated' }}</span></p>
+    <p>Music: <span id="music">{{ user.music or 'Not rated' }}</span></p>
+    <p>Photography: <span id="photography">{{ user.photography or 'Not rated' }}</span></p>
+    <p>Gardening: <span id="gardening">{{ user.gardening or 'Not rated' }}</span></p>
+    <p>Video Games: <span id="video_games">{{ user.video_games or 'Not rated' }}</span></p>
+    <p>Board Games: <span id="board_games">{{ user.board_games or 'Not rated' }}</span></p>
+    <p>DIY Projects: <span id="diy_projects">{{ user.diy_projects or 'Not rated' }}</span></p>
+    <p>Volunteering: <span id="volunteering">{{ user.volunteering or 'Not rated' }}</span></p>
+
+    <!-- Entertainment and Media -->
+    <p>Movies: <span id="movies">{{ user.movies or 'Not rated' }}</span></p>
+    <p>Podcasts: <span id="podcasts">{{ user.podcasts or 'Not rated' }}</span></p>
+    <p>Social Media: <span id="social_media">{{ user.social_media or 'Not rated' }}</span></p>
+
+    <!-- Lifestyle and Habits -->
+    <p>Pets: <span id="pets">{{ user.pets or 'Not rated' }}</span></p>
+    <p>Workout: <span id="workout">{{ user.workout or 'Not rated' }}</span></p>
+    <p>Meditation: <span id="meditation">{{ user.meditation or 'Not rated' }}</span></p>
+
+    <!-- Adventure and Experiences -->
+    <p>Adventure Travel: <span id="travel_adventure">{{ user.travel_adventure or 'Not rated' }}</span></p>
+
+    <!-- Creative Interests -->
+    <p>Playing Musical Instruments: <span id="music_instruments">{{ user.music_instruments or 'Not rated' }}</span></p>
+    <p>Arts & Crafts: <span id="arts_crafts">{{ user.arts_crafts or 'Not rated' }}</span></p>
+
+    <!-- Back to Chat -->
     <a href="{{ url_for('chat') }}">Back to Chat</a>
 </body>
 </html>

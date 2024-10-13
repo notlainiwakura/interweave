@@ -1,75 +1,97 @@
+/* Root Variables */
+:root {
+    --font-family: 'Inter', 'Roboto', sans-serif;
+    --primary-color: #6366F1; /* Indigo */
+    --primary-hover: #4F46E5;
+    --secondary-color: #A5B4FC;
+    --background-color: #F9FAFB;
+    --text-color: #111827;
+    --border-color: #D1D5DB;
+    --error-color: #EF4444;
+    --white: #FFFFFF;
+}
+
 /* General Reset */
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: 'Arial', sans-serif;
+    font-family: var(--font-family);
 }
 
 body {
-    background-color: #f4f7f6;
-    color: #333;
+    background-color: var(--background-color);
+    color: var(--text-color);
     line-height: 1.6;
-    font-family: 'Roboto', sans-serif;
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100vh;
-    margin: 0;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
 }
 
+/* Headings and Paragraphs */
 h1, h2, h3, p {
-    margin-bottom: 15px;
-    font-weight: 400;
+    margin-bottom: 1rem;
 }
 
-/* Overall Container */
+h1, h2, h3 {
+    font-weight: 600;
+}
+
+p {
+    font-weight: 400;
+    color: #6B7280; /* Gray-500 */
+}
+
+/* Container */
 .container {
-    max-width: 1000px;
+    width: 100%;
+    max-width: 1200px;
+    padding: 2rem;
     margin: 0 auto;
-    padding: 20px;
 }
 
 /* Form Container */
 .form-container {
     width: 100%;
     max-width: 400px;
-    margin: 0 auto;
-    padding: 40px;
-    background-color: #ffffff;
-    border-radius: 12px;
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+    padding: 2.5rem;
+    background-color: var(--white);
+    border-radius: 0.75rem;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
     text-align: center;
     animation: fadeIn 0.5s ease;
 }
 
+/* Fade-in Animation */
 @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 /* Form Header */
 .form-header h2 {
-    font-size: 26px;
-    font-weight: 500;
-    color: #2c3e50;
+    font-size: 1.75rem;
+    font-weight: 600;
+    color: var(--text-color);
 }
 
 .form-header p {
-    font-size: 14px;
-    color: #7f8c8d;
+    font-size: 1rem;
+    color: #6B7280; /* Gray-500 */
 }
 
-/* Input Fields and Labels */
+/* Form Groups */
 .form-group {
-    margin-bottom: 20px;
+    margin-bottom: 1.5rem;
     text-align: left;
 }
 
 label {
-    font-size: 14px;
-    color: #2c3e50;
-    margin-bottom: 5px;
+    font-size: 0.875rem;
+    color: var(--text-color);
+    margin-bottom: 0.5rem;
     display: block;
 }
 
@@ -77,175 +99,198 @@ input[type="text"],
 input[type="email"],
 input[type="password"] {
     width: 100%;
-    padding: 12px 15px;
-    border: 1px solid #bdc3c7;
-    border-radius: 6px;
-    font-size: 16px;
-    transition: all 0.3s ease;
-    background-color: #ecf0f1;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    background-color: var(--white);
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 input[type="text"]:focus,
 input[type="email"]:focus,
 input[type="password"]:focus {
-    border-color: #3498db;
+    border-color: var(--primary-color);
     outline: none;
-    background-color: #fff;
-    box-shadow: 0 0 8px rgba(52, 152, 219, 0.3);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
 }
 
 /* Buttons */
 .primary-btn {
-    background-color: #3498db;
-    color: #fff;
+    background-color: var(--primary-color);
+    color: var(--white);
     border: none;
-    padding: 12px 15px;
-    border-radius: 6px;
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
     cursor: pointer;
-    font-size: 16px;
+    font-size: 1rem;
     width: 100%;
     text-transform: uppercase;
-    letter-spacing: 1px;
+    letter-spacing: 0.05em;
     transition: background-color 0.3s ease, transform 0.2s ease;
 }
 
 .primary-btn:hover {
-    background-color: #2980b9;
+    background-color: var(--primary-hover);
     transform: translateY(-2px);
 }
 
 .secondary-btn {
-    background-color: #95a5a6;
-    color: white;
+    background-color: #6B7280; /* Gray-500 */
+    color: var(--white);
     border: none;
-    padding: 12px 15px;
-    border-radius: 6px;
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
     cursor: pointer;
-    font-size: 16px;
+    font-size: 1rem;
     width: 100%;
     text-transform: uppercase;
-    margin-top: 10px;
+    margin-top: 0.75rem;
     transition: background-color 0.3s ease;
 }
 
 .secondary-btn:hover {
-    background-color: #7f8c8d;
+    background-color: #4B5563; /* Gray-600 */
 }
 
 .btn-link {
-    color: #3498db;
+    color: var(--primary-color);
     text-decoration: none;
-    font-size: 14px;
+    font-size: 0.875rem;
     transition: color 0.3s ease;
 }
 
 .btn-link:hover {
-    color: #2980b9;
+    color: var(--primary-hover);
 }
 
 /* Error Message */
 .error-message {
-    background-color: #e74c3c;
-    color: #fff;
-    border-radius: 6px;
-    padding: 10px;
-    margin-bottom: 20px;
-    font-size: 14px;
+    background-color: var(--error-color);
+    color: var(--white);
+    border-radius: 0.5rem;
+    padding: 0.75rem;
+    margin-bottom: 1.5rem;
+    font-size: 0.875rem;
     text-align: center;
-    box-shadow: 0px 4px 8px rgba(231, 76, 60, 0.2);
+    box-shadow: 0 4px 8px rgba(239, 68, 68, 0.2);
 }
 
 /* Form Footer */
 .form-footer {
-    margin-top: 20px;
+    margin-top: 1.5rem;
 }
 
 .form-footer p {
-    color: #7f8c8d;
-    font-size: 14px;
+    color: #6B7280; /* Gray-500 */
+    font-size: 0.875rem;
 }
 
 /* Chatbox Styling */
 .chat-container {
-    max-width: 700px;
+    width: 100%;
+    max-width: 800px;
     margin: 0 auto;
     display: flex;
     flex-direction: column;
     height: 80vh;
-    padding: 20px;
-    background-color: #ecf0f1;
-    border-radius: 12px;
-    box-shadow: 0px 10px 25px rgba(0, 0, 0, 0.1);
+    background-color: var(--white);
+    border-radius: 0.75rem;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
 }
 
 .chat-header {
-    background-color: #2c3e50;
-    color: white;
-    padding: 15px;
-    border-radius: 12px 12px 0 0;
+    background-color: var(--primary-color);
+    color: var(--white);
+    padding: 1rem;
     text-align: center;
+    font-size: 1.25rem;
+    font-weight: 600;
 }
 
 .chat-box {
     flex-grow: 1;
-    padding: 20px;
+    padding: 1.5rem;
     overflow-y: auto;
-    background-color: #f9f9f9;
-    border: 1px solid #bdc3c7;
-    border-radius: 8px;
-    margin-bottom: 20px;
-    box-shadow: inset 0 4px 12px rgba(0, 0, 0, 0.05);
+    background-color: var(--background-color);
+}
+
+.chat-message {
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: flex-start;
+}
+
+.chat-message.user .message-content {
+    background-color: var(--primary-color);
+    color: var(--white);
+    align-self: flex-end;
+}
+
+.chat-message.bot .message-content {
+    background-color: #E5E7EB; /* Gray-200 */
+    color: var(--text-color);
+    align-self: flex-start;
+}
+
+.message-content {
+    max-width: 75%;
+    padding: 0.75rem 1rem;
+    border-radius: 0.75rem;
+    font-size: 1rem;
+    line-height: 1.5;
 }
 
 .chat-form {
     display: flex;
-    background-color: white;
-    border-radius: 6px;
-    padding: 10px;
-    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.05);
+    padding: 1rem;
+    background-color: var(--white);
+    border-top: 1px solid var(--border-color);
 }
 
 .chat-input {
     flex-grow: 1;
-    padding: 10px;
-    border-radius: 6px;
-    border: 1px solid #bdc3c7;
-    font-size: 16px;
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+    border: 1px solid var(--border-color);
+    font-size: 1rem;
     transition: border-color 0.3s ease;
 }
 
 .chat-input:focus {
-    border-color: #3498db;
+    border-color: var(--primary-color);
     outline: none;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
 }
 
 .send-btn {
-    background-color: #3498db;
-    color: white;
+    background-color: var(--primary-color);
+    color: var(--white);
     border: none;
-    padding: 12px 20px;
-    border-radius: 6px;
+    padding: 0.75rem 1.25rem;
+    border-radius: 0.5rem;
     cursor: pointer;
-    font-size: 16px;
-    margin-left: 10px;
+    font-size: 1rem;
+    margin-left: 0.75rem;
     transition: background-color 0.3s ease, transform 0.2s ease;
 }
 
 .send-btn:hover {
-    background-color: #2980b9;
+    background-color: var(--primary-hover);
     transform: translateY(-2px);
 }
 
-/* Scrollbar styling */
+/* Scrollbar Styling */
 .chat-box::-webkit-scrollbar {
     width: 8px;
 }
 
 .chat-box::-webkit-scrollbar-thumb {
-    background-color: #3498db;
-    border-radius: 10px;
+    background-color: var(--primary-color);
+    border-radius: 4px;
 }
 
 .chat-box::-webkit-scrollbar-track {
-    background-color: #ecf0f1;
+    background-color: #E5E7EB; /* Gray-200 */
 }
