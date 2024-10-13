@@ -1,5 +1,6 @@
-from flask import Flask, render_template, request, redirect, url_for, jsonify, session
 from flask_session import Session
+from flask import Flask, render_template, request, redirect, url_for, jsonify, session
+
 from flask_login import (
     LoginManager,
     login_user,
@@ -105,6 +106,24 @@ def logout():
     session.pop('user_profile', None)
     return redirect(url_for('login'))
 
+@app.route('/profile')
+@login_required
+def profile():
+    return render_template('profile.html', user=current_user)
+
+@app.route('/update_profile', methods=['POST'])
+@login_required
+def update_profile():
+    data = request.get_json()
+    db_session = SessionLocal()
+    user = db_session.query(User).get(current_user.id)
+    user.sci_fi_movies = data.get('sci_fi_movies')
+    user.cooking = data.get('cooking')
+    user.hiking = data.get('hiking')
+    db_session.commit()
+    db_session.close()
+    return jsonify({'status': 'success'})
+
 # Chat page route
 @app.route('/chat')
 @login_required
@@ -117,29 +136,39 @@ def chat():
 def chat_api():
     data = request.get_json()
     message = data.get('message')
-    stage = data.get('stage')
-    # Retrieve or initialize user_profile from session
-    user_profile = session.get('user_profile', {
-        'interests': {},
-        'embedding': None
-    })
+    current_question = data.get('current_question', '')
 
-    # Conversation logic
-    # Deduce interest and relevance from user's message
-    interest, interest_score, relevance_score = deduce_interest_and_relevance(message)
-    if interest:
-        user_profile['interests'][interest] = {
-            'interest': interest_score,
-            'relevance': relevance_score
-        }
-        reply = 'That sounds interesting! Tell me more about what you like.'
+    if not current_question:
+        if message.lower() in ['sci-fi movies', 'scifi movies', 'sci fi movies']:
+            current_question = 'sci_fi_movies'
+        elif message.lower() == 'cooking':
+            current_question = 'cooking'
+        elif message.lower() == 'hiking':
+            current_question = 'hiking'
+
+        if current_question:
+            reply = f'From 1 to 10 how much do you {"are interested in" if current_question == "sci_fi_movies" else "like"} {current_question.replace("_", " ")}?'
+        else:
+            reply = "I can ask you about your interests in sci-fi movies, cooking, and hiking. Which one would you like to rate?"
     else:
-        reply = 'Could you tell me more about your interests?'
+        try:
+            value = float(message)
+            if 1 <= value <= 10:
+                db_session = SessionLocal()
+                user = db_session.query(User).get(current_user.id)
+                setattr(user, current_question, value)
+                db_session.commit()
+                db_session.close()
+                reply = f'Great! Your {current_question.replace("_", " ")} interest has been updated to {value}. Would you like to rate another interest?'
+                current_question = ''  # Reset question for the next input
+            else:
+                reply = 'Please provide a number between 1 and 10.'
+        except ValueError:
+            reply = 'Please provide a valid number between 1 and 10.'
 
-    # Save user_profile in session
-    session['user_profile'] = user_profile
+    return jsonify({'reply': reply, 'current_question': current_question})
 
-    return jsonify({'reply': reply, 'stage': 1})
+
 
 # Route to find similar users
 @app.route('/find_similar_users', methods=['POST'])

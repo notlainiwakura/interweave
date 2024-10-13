@@ -4,29 +4,45 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Chat</title>
-    <!-- Link to the external CSS file -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
-    <!-- Link to the external JavaScript file -->
-    <script src="{{ url_for('static', filename='js/script.js') }}" defer></script>
 </head>
 <body>
-    <div class="chat-container">
-        <!-- Chat Header with Username and Logout Button -->
-        <header class="chat-header">
-            <h1>Welcome, {{ username }}!</h1>
-            <a href="{{ url_for('logout') }}" class="logout-btn">Logout</a>
-        </header>
+    <h1>Welcome, {{ username }}!</h1>
+    <a href="{{ url_for('profile') }}">Profile</a>
+    <div id="chat-window"></div>
+    <input type="text" id="user-input" placeholder="Type your message...">
+    <button onclick="sendMessage()">Send</button>
 
-        <!-- Chat Box where messages will appear -->
-        <div class="chat-box" id="chat-box">
-            <!-- Chat messages will be appended here dynamically via JavaScript -->
-        </div>
+    <script>
+    let currentQuestion = '';
 
-        <!-- Chat Form for sending messages -->
-        <form id="chat-form" class="chat-form" action="javascript:void(0);">
-            <input type="text" id="chat-input" class="chat-input" placeholder="Type your message..." required>
-            <button type="submit" class="send-btn">Send</button>
-        </form>
-    </div>
+    function sendMessage() {
+        const userInput = document.getElementById('user-input');
+        const message = userInput.value;
+        userInput.value = '';
+
+        displayMessage('You: ' + message);
+
+        fetch('/chat_api', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                message: message,
+                current_question: currentQuestion
+            }),
+        })
+        .then(response => response.json())
+        .then(data => {
+            displayMessage('Bot: ' + data.reply);
+            currentQuestion = data.current_question;
+        });
+    }
+
+    function displayMessage(message) {
+        const chatWindow = document.getElementById('chat-window');
+        chatWindow.innerHTML += '<p>' + message + '</p>';
+    }
+    </script>
 </body>
 </html>

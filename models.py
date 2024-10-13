@@ -1,10 +1,10 @@
-from sqlalchemy import Column, Integer, String, LargeBinary, Text
+from sqlalchemy import Column, Integer, String, LargeBinary, Text, Float
 from sqlalchemy.orm import relationship
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin
 from database import Base
 
-# Make sure to inherit from UserMixin to get default implementations of the required methods
+
 class User(Base, UserMixin):
     __tablename__ = 'users'
 
@@ -14,6 +14,11 @@ class User(Base, UserMixin):
     password_hash = Column(String(128), nullable=False)
     interests = Column(Text, nullable=True)
     embedding = Column(LargeBinary, nullable=True)
+
+    # New columns
+    sci_fi_movies = Column(Float, nullable=True)
+    cooking = Column(Float, nullable=True)
+    hiking = Column(Float, nullable=True)
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
